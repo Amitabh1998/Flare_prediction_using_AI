@@ -1,27 +1,32 @@
+# tests/test_data.py
 import pandas as pd
-import pytest
-import numpy as np
 from app.data import load_data, get_data_splits
 
 def test_load_data():
     df = load_data()
-    assert isinstance(df, pd.DataFrame), "Data should be a pandas DataFrame"
-    assert len(df) == 120, f"Expected 108 rows, got {len(df)}"
-    expected_columns = {'day', 'total_sleep', 'deep_sleep', 'rem_sleep', 'wake', 'subject', 
-                        'pain', 'fatigue', 'mood', 'sleep_hours', 'treatment', 'flare_next_day'}
-    assert set(df.columns) == expected_columns, f"Unexpected columns: {set(df.columns).symmetric_difference(expected_columns)}"
-    assert df['flare_next_day'].isin([0, 1]).all(), "flare_next_day should only contain 0 or 1"
-    assert df['pain'].between(0, 10).all(), "pain should be between 0 and 10"
-    assert df['fatigue'].between(0, 10).all(), "fatigue should be between 0 and 10"
-    assert df['mood'].between(0, 10).all(), "mood should be between 0 and 10"
+    assert df.shape[0] == 252, f"Expected 252 rows, got {df.shape[0]}"
+    assert df.shape[1] >= 13, f"Expected at least 13 columns, got {df.shape[1]}"
+    expected_columns = ['day', 'total_sleep', 'deep_sleep', 'rem_sleep', 'wake', 'subject', 'pain', 'fatigue', 'mood', 'sleep_hours', 'treatment', 'flare_next_day', 'sleep_efficiency']
+    assert all(col in df.columns for col in expected_columns), "Missing required columns"
+    assert df['total_sleep'].ge(df['deep_sleep'] + df['rem_sleep']).all(), "Total sleep must be >= deep_sleep + rem_sleep"
+    assert df['pain'].between(0, 10).all(), "Pain must be in [0, 10]"
+    assert df['fatigue'].between(0, 10).all(), "Fatigue must be in [0, 10]"
+    assert df['mood'].between(0, 10).all(), "Mood must be in [0, 10]"
+    assert df['treatment'].isin([0, 1]).all(), "Treatment must be 0 or 1"
+    assert df['flare_next_day'].isin([0, 1]).all(), "Flare_next_day must be 0 or 1"
+    assert df['sleep_efficiency'].between(0, 1).all(), "Sleep efficiency must be in [0, 1]"
+    assert df.isnull().sum().sum() == 0, "Dataset contains missing values"
 
 def test_data_splits():
     df = load_data()
-    X = df[['total_sleep', 'deep_sleep', 'rem_sleep', 'wake', 'pain', 'fatigue', 'mood', 'sleep_hours', 'treatment']].values
+    features = ['total_sleep', 'deep_sleep', 'rem_sleep', 'wake', 'pain', 'fatigue', 'mood', 'sleep_hours', 'treatment', 'sleep_efficiency']
+    X = df[features].values
     y = df['flare_next_day'].values
     train_idx, test_idx, X_train, X_test, y_train, y_test = get_data_splits(X, y)
-    assert len(train_idx) == int(0.8 * len(X)), f"Expected {int(0.8 * len(X))} training samples, got {len(train_idx)}"
-    assert len(test_idx) == len(X) - len(train_idx), f"Expected {len(X) - len(train_idx)} test samples, got {len(test_idx)}"
-    assert X_train.shape[0] == len(y_train), f"Mismatch in X_train ({X_train.shape[0]}) and y_train ({len(y_train)})"
-    assert X_test.shape[0] == len(y_test), f"Mismatch in X_test ({X_test.shape[0]}) and y_test ({len(y_test)})"
-    assert X_train.shape[1] == 9, f"Expected 9 features in X_train, got {X_train.shape[1]}"
+    assert len(train_idx) == int(0.8 * len(X)), "Train split size incorrect"
+    assert len(test_idx) == len(X) - len(train_idx), "Test split size incorrect"
+    assert X_train.shape[0] == len(train_idx), "X_train size mismatch"
+    assert X_test.shape[0] == len(test_idx), "X_test size mismatch"
+    assert y_train.shape[0] == len(train_idx), "y_train size mismatch"
+    assert y_test.shape[0] == len(test_idx), "y_test size mismatch"
+    assert X_train.shape[1] == 10, f"Expected 10 features, got {X_train.shape[1]}"

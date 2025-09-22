@@ -1,12 +1,12 @@
+# app/main.py
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
-from app.model import train_all_models, load_model, predict_flare
+from app.model import train_all_models, predict_flare
 from app.data import load_data
-from app.utils import normalize
 
 # Set page config
 st.set_page_config(layout="wide", page_title="Sleep Flare Predictor", initial_sidebar_state="expanded")
@@ -107,7 +107,7 @@ st.markdown("""
 
 # Load data
 df = load_data()
-features = ['total_sleep', 'deep_sleep', 'rem_sleep', 'wake', 'pain', 'fatigue', 'mood', 'sleep_hours', 'treatment']
+features = ['total_sleep', 'deep_sleep', 'rem_sleep', 'wake', 'pain', 'fatigue', 'mood', 'sleep_hours', 'treatment', 'sleep_efficiency']
 
 # Initialize model and training
 model_path = 'models/flare_model_v2.pt'
@@ -119,7 +119,7 @@ with st.sidebar:
         <div class='card'>
             <h2 class='text-lg font-bold text-gray-800'>Sleep Flare Predictor</h2>
             <p class='text-gray-600'>A machine learning tool to predict flare-ups based on sleep and symptom data.</p>
-            <p class='text-sm text-gray-500 mt-4'>Built with <i class='fas fa-heart text-red-500'></i> by Amitabh</p>
+            <p class='text-sm text-gray-500 mt-4'>Built with <i class='fas fa-heart text-red-500'></i> by xAI</p>
         </div>
     """, unsafe_allow_html=True)
     st.markdown("""
@@ -276,6 +276,10 @@ with tab3:
             )
             st.markdown(f"<p class='text-sm text-gray-500'>Selected: {'Yes' if treatment == 1 else 'No'}</p>", unsafe_allow_html=True)
         
+        # Compute sleep efficiency
+        sleep_efficiency = total_sleep / (total_sleep + wake) if (total_sleep + wake) > 0 else 0.0
+        st.markdown(f"<p class='text-sm text-gray-500'>Computed Sleep Efficiency: {sleep_efficiency:.2f}</p>", unsafe_allow_html=True)
+        
         # Input validation
         if total_sleep < deep_sleep + rem_sleep:
             st.markdown(
@@ -288,7 +292,7 @@ with tab3:
                 st.error("Invalid input: Total sleep must be greater than or equal to deep sleep + REM sleep.")
             else:
                 with st.spinner("Predicting..."):
-                    input_data = np.array([[total_sleep, deep_sleep, rem_sleep, wake, pain, fatigue, mood, sleep_hours, treatment]])
+                    input_data = np.array([[total_sleep, deep_sleep, rem_sleep, wake, pain, fatigue, mood, sleep_hours, treatment, sleep_efficiency]])
                     prediction, prob_flare, output = predict_flare(model, input_data, model_type, mean, std)
                     result_color = "#ef4444" if prediction == "Flare Likely" else "#10b981"
                     

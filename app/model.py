@@ -14,7 +14,7 @@ from app.utils import normalize, augment_data
 class FlareNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(9, 64)
+        self.fc1 = nn.Linear(10, 64)
         self.bn1 = nn.BatchNorm1d(64)
         self.fc2 = nn.Linear(64, 32)
         self.bn2 = nn.BatchNorm1d(32)
@@ -90,7 +90,11 @@ def train_all_models(df, features, model_path):
 
     best_model_type = max(models, key=lambda k: models[k][2])
     best_model, best_acc, best_avg_recall, mean, std = models[best_model_type]
-    report = f"Best Model: {best_model_type}\nAccuracy: {best_acc*100:.2f}%\nRecall (No Flare): {recall_no_nn*100:.2f}%\nRecall (Flare): {recall_flare_nn*100:.2f}%"
+    report = f"Neural Network - Accuracy: {acc_nn*100:.2f}%, Recall (No Flare): {recall_no_nn*100:.2f}%, Recall (Flare): {recall_flare_nn*100:.2f}%\n" \
+             f"Random Forest - Accuracy: {acc_rf*100:.2f}%, Recall (No Flare): {recall_no_rf*100:.2f}%, Recall (Flare): {recall_flare_rf*100:.2f}%\n" \
+             f"XGBoost - Accuracy: {acc_xgb*100:.2f}%, Recall (No Flare): {recall_no_xgb*100:.2f}%, Recall (Flare): {recall_flare_xgb*100:.2f}%\n" \
+             f"Logistic Regression - Accuracy: {acc_lr*100:.2f}%, Recall (No Flare): {recall_no_lr*100:.2f}%, Recall (Flare): {recall_flare_lr*100:.2f}%\n" \
+             f"Best Model: {best_model_type}\nAccuracy: {best_acc*100:.2f}%\nAverage Recall: {best_avg_recall*100:.2f}%"
 
     # Save best model
     if best_model_type == 'NN':

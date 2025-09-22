@@ -1,3 +1,4 @@
+# app/data.py
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
@@ -18,7 +19,10 @@ class FlareDataset(Dataset):
 def load_data():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_path = os.path.join(base_dir, 'data', 'data.csv')
-    return pd.read_csv(data_path)
+    df = pd.read_csv(data_path)
+    # Add sleep efficiency
+    df['sleep_efficiency'] = df['total_sleep'] / (df['total_sleep'] + df['wake'])
+    return df
 
 def get_data_splits(X, y):
     np.random.seed(42)
