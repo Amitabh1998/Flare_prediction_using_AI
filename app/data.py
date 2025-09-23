@@ -20,8 +20,23 @@ def load_data():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_path = os.path.join(base_dir, 'data', 'data.csv')
     df = pd.read_csv(data_path)
-    # Add sleep efficiency
-    df['sleep_efficiency'] = df['total_sleep'] / (df['total_sleep'] + df['wake'])
+    # Clean data
+    df = df[df['total_sleep'] >= df['deep_sleep'] + df['rem_sleep']]
+    df['pain'] = df['pain'].clip(0, 10)
+    df['fatigue'] = df['fatigue'].clip(0, 10)
+    df['mood'] = df['mood'].clip(0, 10)
+    df['treatment'] = df['treatment'].clip(0, 1)
+    df['flare_next_day'] = df['flare_next_day'].clip(0, 1)
+    df['total_sleep'] = df['total_sleep'].clip(0, 24)
+    df['wake'] = df['wake'].clip(0, 24)
+    df['sleep_hours'] = df['sleep_hours'].clip(0.1, 2)  # Address outlier (min=0.002)
+    # Add features
+    df['sleep_efficiency'] = df['total_sleep'] / (df['total_sleep'] + df['wake']).replace(0, 1e-10)
+    df['pain_fatigue_interaction'] = df['pain'] * df['fatigue']
+    df['mood_pain_interaction'] = df['mood'] * df['pain']
+    # Add rolling mean of pain per subject (3-day window)
+    df['pain_rolling_mean'] = df.groupby('subject')['pain'].transform(lambda x: x.rolling(window=3, min_periods=1).mean())
+    df['pain_rolling_mean'] = df['pain_rolling_mean'].fillna(df['pain'])  # Fill NaN for first entries
     return df
 
 def get_data_splits(X, y):

@@ -6,15 +6,17 @@ import numpy as np
 import os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
-from sklearn.metrics import accuracy_score, recall_score
+from sklearn.metrics import accuracy_score, recall_score, balanced_accuracy_score
+from imblearn.over_sampling import SMOTE
 from app.data import get_data_splits, FlareDataset
 from app.utils import normalize, augment_data
 
 class FlareNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(10, 64)
+        self.fc1 = nn.Linear(7, 64)  # 7 selected features
         self.bn1 = nn.BatchNorm1d(64)
         self.fc2 = nn.Linear(64, 32)
         self.bn2 = nn.BatchNorm1d(32)
@@ -39,17 +41,22 @@ def train_all_models(df, features, model_path):
     train_idx, test_idx, X_train, X_test, y_train, y_test = get_data_splits(X, y)
     X_train_norm, mean, std = normalize(X_train)
     X_test_norm = (X_test - mean) / std
-    X_train_aug, y_train_aug = augment_data(X_train_norm, y_train)
 
-    # Train NN
+    # Apply SMOTE to balance classes
+    smote = SMOTE(random_state=42, k_neighbors=3)
+    X_train_norm, y_train = smote.fit_resample(X_train_norm, y_train)
+    X_train_aug, y_train_aug = augment_data(X_train_norm, y_train, num_augs=2, noise_std=0.02)
+
+    # Train Neural Network
     train_dataset = FlareDataset(X_train_aug, y_train_aug)
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
     model_nn = FlareNet()
-    criterion = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 5.0]))
+    criterion = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 1.2]))
     optimizer = optim.Adam(model_nn.parameters(), lr=0.001)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
-    for epoch in range(200):
+    for epoch in range(100):
         model_nn.train()
         for inputs, labels in train_loader:
             optimizer.zero_grad()
@@ -57,22 +64,39 @@ def train_all_models(df, features, model_path):
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+        scheduler.step(loss)
 
     y_pred_nn = model_nn(torch.tensor(X_test_norm, dtype=torch.float32)).argmax(dim=1).numpy()
     acc_nn, recall_no_nn, recall_flare_nn = evaluate(y_test, y_pred_nn)
 
     # Train Random Forest
-    model_rf = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
+    model_rf = RandomForestClassifier(n_estimators=300, max_depth=10, min_samples_split=5, random_state=42, class_weight='balanced')
     model_rf.fit(X_train_norm, y_train)
     y_pred_rf = model_rf.predict(X_test_norm)
     acc_rf, recall_no_rf, recall_flare_rf = evaluate(y_test, y_pred_rf)
+    print("Random Forest Feature Importance:")
+    for feature, importance in zip(features, model_rf.feature_importances_):
+        print(f"{feature}: {importance:.4f}")
 
-    # Train XGBoost
-    scale_pos_weight = len(y_train[y_train == 0]) / len(y_train[y_train == 1]) if len(y_train[y_train == 1]) > 0 else 1
-    model_xgb = XGBClassifier(n_estimators=100, random_state=42, scale_pos_weight=scale_pos_weight)
-    model_xgb.fit(X_train_norm, y_train)
+    # Train XGBoost with GridSearch
+    scale_pos_weight = len(y_train[y_train == 0]) / len(y_train[y_train == 1]) * 1.1 if len(y_train[y_train == 1]) > 0 else 1
+    param_grid = {
+        'n_estimators': [100, 200, 300],
+        'max_depth': [3, 5, 7],
+        'learning_rate': [0.01, 0.05, 0.1],
+        'min_child_weight': [1, 3],
+        'subsample': [0.7, 0.9],
+        'colsample_bytree': [0.7, 1.0]
+    }
+    model_xgb = XGBClassifier(scale_pos_weight=scale_pos_weight, random_state=42)
+    grid = GridSearchCV(model_xgb, param_grid, cv=5, scoring='balanced_accuracy')
+    grid.fit(X_train_norm, y_train)
+    model_xgb = grid.best_estimator_
     y_pred_xgb = model_xgb.predict(X_test_norm)
     acc_xgb, recall_no_xgb, recall_flare_xgb = evaluate(y_test, y_pred_xgb)
+    print("XGBoost Feature Importance:")
+    for feature, importance in zip(features, model_xgb.feature_importances_):
+        print(f"{feature}: {importance:.4f}")
 
     # Train Logistic Regression
     model_lr = LogisticRegression(max_iter=1000, random_state=42, class_weight='balanced')

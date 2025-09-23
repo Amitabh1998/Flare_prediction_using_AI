@@ -1,7 +1,7 @@
-
+# app/utils.py
 import numpy as np
 
-def augment_data(X, y, num_augs=10, noise_std=0.1):
+def augment_data(X, y, num_augs=3, noise_std=0.03):
     X_aug = [X]
     y_aug = [y]
     for _ in range(num_augs):
