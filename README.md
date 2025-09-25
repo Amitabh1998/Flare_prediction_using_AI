@@ -1,19 +1,16 @@
-Here is the content formatted as a GitHub `.md` file:
-
-```markdown
 # Sleep Flare Predictor
 
-**A machine learning application for predicting flare-ups in chronic conditions using sleep and symptom data.**
+A machine learning application for predicting flare-ups in chronic conditions using sleep and symptom data.
 
 ---
 
 ## Overview
 
-The **Sleep Flare Predictor** is a Python-based machine learning application designed to predict flare-ups in chronic conditions using sleep and symptom data. Built with **Streamlit**, it provides an intuitive interface for data exploration, visualization, and flare prediction.
+The **Sleep Flare Predictor** is a Python-based application designed to predict flare-ups in chronic conditions using sleep and symptom data. It leverages an ensemble of models (Neural Network, Random Forest, XGBoost, Logistic Regression) and provides an intuitive **Streamlit** interface for data exploration, visualization, and prediction.
 
 ### Key Features
-- **Data Exploration**: Displays dataset (~252 rows, 15 columns), descriptive statistics, and flare distribution.
-- **Visualizations**: Correlation heatmap, pain trends by subject, and average metrics by flare status.
+- **Data Exploration**: View dataset (~252 rows, 15 columns), statistics, and flare distribution.
+- **Visualizations**: Correlation heatmap, pain trends, and average metrics by flare status.
 - **Prediction**: Input sleep and symptom data to predict flare likelihood with probability outputs.
 - **Models**: Neural Network, Random Forest, XGBoost, and Logistic Regression, with the best model selected based on average recall.
 
@@ -30,7 +27,7 @@ The **Sleep Flare Predictor** is a Python-based machine learning application des
 
 ## Project Structure
 
-```
+```bash
 Flare_prediction_project/
 ├── app/
 │   ├── data.py          # Data loading and preprocessing
@@ -78,17 +75,19 @@ Flare_prediction_project/
 - Conda environment
 
 ### Dependencies
-- `scikit-learn>=1.5.0`
-- `xgboost>=2.1.0`
-- `torch>=2.0.0`
-- `pandas>=2.0.0`
-- `streamlit>=1.25.0`
-- `plotly>=5.10.0`
-- `matplotlib>=3.7.0`
-- `seaborn>=0.12.0`
-- `joblib>=1.2.0`
-- `pytest>=7.4.0`
-- `imblearn>=0.12.0`
+```bash
+scikit-learn>=1.5.0
+xgboost>=2.1.0
+torch>=2.0.0
+pandas>=2.0.0
+streamlit>=1.25.0
+plotly>=5.10.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+joblib>=1.2.0
+pytest>=7.4.0
+imblearn>=0.12.0
+```
 
 ### Installation
 1. Clone the repository:
@@ -110,7 +109,7 @@ Flare_prediction_project/
 
 4. Set `PYTHONPATH`:
    ```bash
-   export PYTHONPATH=$PYTHONPATH:/path/to/Flare_prediction_project
+   export PYTHONPATH=\$PYTHONPATH:/path/to/Flare_prediction_project
    ```
 
 ---
@@ -172,8 +171,15 @@ tests/test_model.py::test_model_inference PASSED [100%]
 ## Checking Correlations
 
 Verify feature correlations with `flare_next_day`:
-```bash
-python -c "import pandas as pd; df = pd.read_csv('data/data.csv'); df['sleep_efficiency'] = df['total_sleep'] / (df['total_sleep'] + df['wake']).replace(0, 1e-10); df['pain_fatigue_interaction'] = df['pain'] * df['fatigue']; df['mood_pain_interaction'] = df['mood'] * df['pain']; df['pain_rolling_mean'] = df.groupby('subject')['pain'].transform(lambda x: x.rolling(window=3, min_periods=1).mean()).fillna(df['pain']); features = ['pain', 'fatigue', 'sleep_hours', 'sleep_efficiency', 'pain_fatigue_interaction', 'mood_pain_interaction', 'pain_rolling_mean', 'flare_next_day']; print(df[features].corr()['flare_next_day'].sort_values())"
+```python
+import pandas as pd
+df = pd.read_csv('data/data.csv')
+df['sleep_efficiency'] = df['total_sleep'] / (df['total_sleep'] + df['wake']).replace(0, 1e-10)
+df['pain_fatigue_interaction'] = df['pain'] * df['fatigue']
+df['mood_pain_interaction'] = df['mood'] * df['pain']
+df['pain_rolling_mean'] = df.groupby('subject')['pain'].transform(lambda x: x.rolling(window=3, min_periods=1).mean()).fillna(df['pain'])
+features = ['pain', 'fatigue', 'sleep_hours', 'sleep_efficiency', 'pain_fatigue_interaction', 'mood_pain_interaction', 'pain_rolling_mean', 'flare_next_day']
+print(df[features].corr()['flare_next_day'].sort_values())
 ```
 
 **Example Output:**
@@ -294,13 +300,10 @@ flare_next_day         1.000000
 
 ## Contributors
 
-- **Built by**: [Amitabh Das](https://github.com/yourusername)
+- **Built by**: [Amitabh Das](https://github.com/amitabh1998)
 
 ---
 
 ## License
 
 - **MIT License**: See [LICENSE](LICENSE) for details.
-```
-
-You can copy this content into a file named `README.md` in your GitHub repository.
