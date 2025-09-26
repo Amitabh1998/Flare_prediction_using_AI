@@ -4,8 +4,8 @@ import numpy as np
 import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
-from app.model import train_all_models, predict_flare
-from app.data import load_data
+from model import train_all_models, predict_flare
+from data import load_data
 
 # Set page config
 st.set_page_config(layout="wide", page_title="Sleep Flare Predictor", initial_sidebar_state="expanded")
