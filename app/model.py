@@ -10,8 +10,8 @@ from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, recall_score, balanced_accuracy_score
 from imblearn.over_sampling import SMOTE
-from app.data import get_data_splits, FlareDataset
-from app.utils import normalize, augment_data
+from data import get_data_splits, FlareDataset
+from utils import normalize, augment_data
 
 class FlareNet(nn.Module):
     def __init__(self):
