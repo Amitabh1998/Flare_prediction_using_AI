@@ -1,6 +1,7 @@
 # Sleep Flare Predictor
 
 A machine learning application for predicting flare-ups in chronic conditions using sleep and symptom data.
+Link to project- https://amitabh1998-flare-prediction-using-ai-appmain-yhi9kc.streamlit.app
 
 ---
 
